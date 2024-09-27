@@ -15,23 +15,24 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.walk;
 
+@SuppressWarnings({"unchecked"})
 public class Forester<T extends AbstractTreeNode> {
 
     private static Forester instance;
-    //private final Set<T> searchTree = new HashSet<>();
     private final RootNode rootNode =  RootNode.getinstance();
 
     private Forester() {
-        growTree();
-        System.out.println();
     }
 
-    private void growTree() {
+    public static Forester getInstance() {
+        if (Objects.isNull(instance)) instance = new Forester();
+        return instance;
+    }
+
+    public Set<T> growTree() {
         List<Class<T>> qq = plantTree();
         recursiveCircuit((T) rootNode, qq);
-
-
-
+        return rootNode.getChildren();
     }
 
     public void recursiveCircuit(T node, List<Class<T>> restClasses) {
@@ -47,8 +48,7 @@ public class Forester<T extends AbstractTreeNode> {
 
     private List<Class<T>> plantTree() {
         final List<Path> filePaths = collectPaths();
-        Class<T> parentClass = (Class<T>) rootNode.getClass();
-        return goThroughCollection((T) RootNode.getinstance(), /*parentClass,*/ removeInvalidElements(filePaths));
+        return goThroughCollection((T) RootNode.getinstance(), removeInvalidElements(filePaths));
     }
 
     private List<Class<T>> removeInvalidElements(List<Path> filePaths) {
@@ -57,17 +57,13 @@ public class Forester<T extends AbstractTreeNode> {
             Class<T> klass = loadNode(path);
             if (Objects.nonNull(klass)) classes.add(klass);
         }
-        final ListIterator<Class<T>> listIterator = classes.listIterator();
-        while (listIterator.hasNext()) {
-            final Class clazz = listIterator.next();
-            if (clazz.getSuperclass() != AbstractTreeNode.class
-            || !clazz.isAnnotationPresent(ParentNode.class)
-            || Modifier.isAbstract(clazz.getModifiers())) listIterator.remove();
-        }
+        classes.removeIf(clazz -> clazz.getSuperclass() != AbstractTreeNode.class
+                || !clazz.isAnnotationPresent(ParentNode.class)
+                || Modifier.isAbstract(clazz.getModifiers()));
         return classes;
     }
 
-    private List<Class<T>> goThroughCollection(T node,/* T parentClass, */List<Class<T>> classes) {
+    private List<Class<T>> goThroughCollection(T node, List<Class<T>> classes) {
         final ListIterator<Class<T>> listIterator = classes.listIterator();
         while (listIterator.hasNext()) {
             Class<T> klass = listIterator.next();
@@ -79,7 +75,6 @@ public class Forester<T extends AbstractTreeNode> {
                     e.printStackTrace();
                 }
             }
-
         }
         return classes;
     }
@@ -118,11 +113,4 @@ public class Forester<T extends AbstractTreeNode> {
         }
         return filePaths;
     }
-
-    public static Forester getInstance() {
-        if (Objects.isNull(instance)) instance = new Forester();
-        return instance;
-    }
-
-
 }
