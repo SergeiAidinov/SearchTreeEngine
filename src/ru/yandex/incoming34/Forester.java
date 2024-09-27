@@ -20,6 +20,7 @@ public class Forester<T extends AbstractTreeNode> {
 
     private static Forester instance;
     private final RootNode rootNode =  RootNode.getinstance();
+    List<Class<T>> validElements;
 
     private Forester() {
     }
@@ -30,25 +31,25 @@ public class Forester<T extends AbstractTreeNode> {
     }
 
     public Set<T> growTree() {
-        List<Class<T>> qq = plantTree();
-        recursiveCircuit((T) rootNode, qq);
+        plantTree();
+        recursiveCircuit((T) rootNode);
         return rootNode.getChildren();
     }
 
-    public void recursiveCircuit(T node, List<Class<T>> restClasses) {
-        List<Class<T>> diminishedPaths = null;
+    public void recursiveCircuit(T node) {
         Set<T> children = node.getChildren();
         for (T childNode : children) {
             if (childNode.getChildren().isEmpty()) {
-                diminishedPaths = goThroughCollection(childNode, /*parentClass, */restClasses);
-                recursiveCircuit(childNode, diminishedPaths);
+                goThroughCollection(childNode);
+                recursiveCircuit(childNode);
             }
         }
     }
 
-    private List<Class<T>> plantTree() {
+    private void plantTree() {
         final List<Path> filePaths = collectPaths();
-        return goThroughCollection((T) RootNode.getinstance(), removeInvalidElements(filePaths));
+        validElements = Collections.unmodifiableList(removeInvalidElements(filePaths));
+        goThroughCollection((T) RootNode.getinstance());
     }
 
     private List<Class<T>> removeInvalidElements(List<Path> filePaths) {
@@ -63,20 +64,16 @@ public class Forester<T extends AbstractTreeNode> {
         return classes;
     }
 
-    private List<Class<T>> goThroughCollection(T node, List<Class<T>> classes) {
-        final ListIterator<Class<T>> listIterator = classes.listIterator();
-        while (listIterator.hasNext()) {
-            Class<T> klass = listIterator.next();
+    private void goThroughCollection(T node) {
+        for (Class<T> klass : validElements) {
             if (klass.getAnnotation(ParentNode.class).parentName().equals(node.getClass())) {
                 try {
-                    node.getChildren().add(klass.newInstance());
-                    listIterator.remove();
+                    node.getChildren().add(klass.getDeclaredConstructor().newInstance());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-        return classes;
     }
 
     private Class<T> loadNode(Path onePath) {
