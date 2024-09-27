@@ -68,7 +68,9 @@ public class Forester<T extends AbstractTreeNode> {
         for (Class<T> klass : validElements) {
             if (klass.getAnnotation(ParentNode.class).parentName().equals(node.getClass())) {
                 try {
-                    node.getChildren().add(klass.getDeclaredConstructor().newInstance());
+                    T newInstance = klass.getDeclaredConstructor().newInstance();
+                    newInstance.setParent(node);
+                    node.getChildren().add(newInstance);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

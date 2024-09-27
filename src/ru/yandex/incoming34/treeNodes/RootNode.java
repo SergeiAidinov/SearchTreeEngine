@@ -19,4 +19,16 @@ public class RootNode<T extends AbstractTreeNode> extends AbstractTreeNode{
     public Set<T> getChildren() {
         return children;
     }
+
+    @Override
+    public void setParent(AbstractTreeNode _parent) {
+
+    }
+
+    @Override
+    public AbstractTreeNode getParent() {
+        return null;
+    }
+
+
 }
