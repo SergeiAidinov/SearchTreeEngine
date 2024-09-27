@@ -27,23 +27,20 @@ public class TreeKeeper<T extends AbstractTreeNode> {
 
     private void growTree() {
         List<Path> qq = plantTree();
-        recursiveCircuit(qq);
+        recursiveCircuit((T) rootNode, qq);
 
 
 
     }
 
-    public void recursiveCircuit(List<Path> restFilePaths) {
+    public void recursiveCircuit(T node, List<Path> restFilePaths) {
         List<Path> diminishedPaths = null;
-        Set<T> children = rootNode.getChildren();
-        for (T node : children) {
-            if (node.getChildren().isEmpty()) {
-                Class<? extends AbstractTreeNode> parentClass = node.getClass();
-               diminishedPaths =  goThroughCollection(node, /*parentClass, */restFilePaths);
-            } else {
-                //recursiveCircuit(diminishedPaths);
+        Set<T> children = node.getChildren();
+        for (T childNode : children) {
+            if (childNode.getChildren().isEmpty()) {
+                diminishedPaths = goThroughCollection(childNode, /*parentClass, */restFilePaths);
+                recursiveCircuit(childNode, diminishedPaths);
             }
-
         }
     }
 
