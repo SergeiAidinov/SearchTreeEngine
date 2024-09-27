@@ -17,8 +17,8 @@ import static java.nio.file.Files.walk;
 public class TreeKeeper<T extends AbstractTreeNode> {
 
     private static TreeKeeper instance;
-    private final Set<T> searchTree = new HashSet<>();
-    private final RootNode rootNode = RootNode.getinstance();
+    //private final Set<T> searchTree = new HashSet<>();
+    private final RootNode rootNode =  RootNode.getinstance();
 
     private TreeKeeper() {
         growTree();
@@ -34,10 +34,14 @@ public class TreeKeeper<T extends AbstractTreeNode> {
     }
 
     public void recursiveCircuit(List<Path> restFilePaths) {
-        for (T node :searchTree) {
+        List<Path> diminishedPaths = null;
+        Set<T> children = rootNode.getChildren();
+        for (T node : children) {
             if (node.getChildren().isEmpty()) {
                 Class<? extends AbstractTreeNode> parentClass = node.getClass();
-                goThroughCollection(node, parentClass, restFilePaths);
+               diminishedPaths =  goThroughCollection(node, /*parentClass, */restFilePaths);
+            } else {
+                //recursiveCircuit(diminishedPaths);
             }
 
         }
@@ -45,11 +49,11 @@ public class TreeKeeper<T extends AbstractTreeNode> {
 
     private List<Path> plantTree() {
         final List<Path> filePaths = collectPaths();
-        Class<? extends AbstractTreeNode> parentClass = rootNode.getClass();
-        return goThroughCollection((T) RootNode.getinstance(), parentClass, filePaths);
+        Class<T> parentClass = (Class<T>) rootNode.getClass();
+        return goThroughCollection((T) RootNode.getinstance(), /*parentClass,*/ filePaths);
     }
 
-    private List<Path> goThroughCollection(T node, Class<? extends AbstractTreeNode> parentClass, List<Path> filePaths) {
+    private List<Path> goThroughCollection(T node,/* T parentClass, */List<Path> filePaths) {
         final ListIterator<Path> listIterator = filePaths.listIterator();
         while (listIterator.hasNext()) {
             Path onePath = listIterator.next();
@@ -59,7 +63,7 @@ public class TreeKeeper<T extends AbstractTreeNode> {
                 continue;
             }
             if (klass.isAnnotationPresent(ParentNode.class)
-                    && klass.getAnnotation(ParentNode.class).parentName().equals(parentClass)) {
+                    && klass.getAnnotation(ParentNode.class).parentName().equals(node.getClass())) {
                 try {
                     node.getChildren().add(klass.newInstance());
                     listIterator.remove();

@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class RootNode<T extends AbstractTreeNode> extends AbstractTreeNode{
+
     private static RootNode instance;
     private final Set<T> children = new HashSet<>();
 
@@ -15,7 +16,7 @@ public class RootNode<T extends AbstractTreeNode> extends AbstractTreeNode{
         return instance;
     }
 
-    public Set<? extends AbstractTreeNode> getChildren() {
+    public Set<T> getChildren() {
         return children;
     }
 }
