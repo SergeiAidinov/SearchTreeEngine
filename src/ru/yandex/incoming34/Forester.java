@@ -6,6 +6,7 @@ import ru.yandex.incoming34.treeNodes.RootNode;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,53 +15,63 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.walk;
 
-public class TreeKeeper<T extends AbstractTreeNode> {
+public class Forester<T extends AbstractTreeNode> {
 
-    private static TreeKeeper instance;
+    private static Forester instance;
     //private final Set<T> searchTree = new HashSet<>();
     private final RootNode rootNode =  RootNode.getinstance();
 
-    private TreeKeeper() {
+    private Forester() {
         growTree();
         System.out.println();
     }
 
     private void growTree() {
-        List<Path> qq = plantTree();
+        List<Class<T>> qq = plantTree();
         recursiveCircuit((T) rootNode, qq);
 
 
 
     }
 
-    public void recursiveCircuit(T node, List<Path> restFilePaths) {
-        List<Path> diminishedPaths = null;
+    public void recursiveCircuit(T node, List<Class<T>> restClasses) {
+        List<Class<T>> diminishedPaths = null;
         Set<T> children = node.getChildren();
         for (T childNode : children) {
             if (childNode.getChildren().isEmpty()) {
-                diminishedPaths = goThroughCollection(childNode, /*parentClass, */restFilePaths);
+                diminishedPaths = goThroughCollection(childNode, /*parentClass, */restClasses);
                 recursiveCircuit(childNode, diminishedPaths);
             }
         }
     }
 
-    private List<Path> plantTree() {
+    private List<Class<T>> plantTree() {
         final List<Path> filePaths = collectPaths();
         Class<T> parentClass = (Class<T>) rootNode.getClass();
-        return goThroughCollection((T) RootNode.getinstance(), /*parentClass,*/ filePaths);
+        return goThroughCollection((T) RootNode.getinstance(), /*parentClass,*/ removeInvalidElements(filePaths));
     }
 
-    private List<Path> goThroughCollection(T node,/* T parentClass, */List<Path> filePaths) {
-        final ListIterator<Path> listIterator = filePaths.listIterator();
+    private List<Class<T>> removeInvalidElements(List<Path> filePaths) {
+        final List<Class<T>> classes = new ArrayList<>();
+        for (Path path : filePaths) {
+            Class<T> klass = loadNode(path);
+            if (Objects.nonNull(klass)) classes.add(klass);
+        }
+        final ListIterator<Class<T>> listIterator = classes.listIterator();
         while (listIterator.hasNext()) {
-            Path onePath = listIterator.next();
-            Class<T> klass = loadNode(onePath);
-            if (Objects.isNull(klass)) {
-                listIterator.remove();
-                continue;
-            }
-            if (klass.isAnnotationPresent(ParentNode.class)
-                    && klass.getAnnotation(ParentNode.class).parentName().equals(node.getClass())) {
+            final Class clazz = listIterator.next();
+            if (clazz.getSuperclass() != AbstractTreeNode.class
+            || !clazz.isAnnotationPresent(ParentNode.class)
+            || Modifier.isAbstract(clazz.getModifiers())) listIterator.remove();
+        }
+        return classes;
+    }
+
+    private List<Class<T>> goThroughCollection(T node,/* T parentClass, */List<Class<T>> classes) {
+        final ListIterator<Class<T>> listIterator = classes.listIterator();
+        while (listIterator.hasNext()) {
+            Class<T> klass = listIterator.next();
+            if (klass.getAnnotation(ParentNode.class).parentName().equals(node.getClass())) {
                 try {
                     node.getChildren().add(klass.newInstance());
                     listIterator.remove();
@@ -70,7 +81,7 @@ public class TreeKeeper<T extends AbstractTreeNode> {
             }
 
         }
-        return filePaths;
+        return classes;
     }
 
     private Class<T> loadNode(Path onePath) {
@@ -108,8 +119,8 @@ public class TreeKeeper<T extends AbstractTreeNode> {
         return filePaths;
     }
 
-    public static TreeKeeper getInstance() {
-        if (Objects.isNull(instance)) instance = new TreeKeeper();
+    public static Forester getInstance() {
+        if (Objects.isNull(instance)) instance = new Forester();
         return instance;
     }
 
