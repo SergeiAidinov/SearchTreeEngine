@@ -17,46 +17,73 @@ import static java.nio.file.Files.walk;
 public class TreeKeeper<T extends AbstractTreeNode> {
 
     private static TreeKeeper instance;
+    private final Set<T> searchTree = new HashSet<>();
     private final RootNode rootNode = RootNode.getinstance();
 
     private TreeKeeper() {
-        this.tree = growTree();
+        growTree();
+        System.out.println();
     }
 
-    private Set<? extends AbstractTreeNode> growTree() {
-        final List<Path> filePaths = collectPaths();
-        Class<? extends AbstractTreeNode> parentClass = rootNode.getClass();
-        while (true) {
-            int initialQuantity = filePaths.size();
-            ListIterator<Path> listIterator = filePaths.listIterator();
-            if (listIterator.hasNext()) {
-                Path onePath = listIterator.next();
-                listIterator.remove();
-                Class<T> klass = null;
-                try {
-                    String fileName = onePath.toString().substring(
-                                    onePath.toString().lastIndexOf("ru"),
-                                    onePath.toString().lastIndexOf("."))
-                            .replace(File.separator, ".");
-                    klass = (Class<T>) Class.forName(fileName);
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-                if (Objects.isNull(klass)) continue;
-                if (klass.isAnnotationPresent(ParentNode.class)
-                        && klass.getAnnotation(ParentNode.class).parentName().equals(parentClass)) {
-                    try {
-                        rootNode.getChildren().add(klass.newInstance());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+    private void growTree() {
+        List<Path> qq = plantTree();
+        recursiveCircuit(qq);
 
+
+
+    }
+
+    public void recursiveCircuit(List<Path> restFilePaths) {
+        for (T node :searchTree) {
+            if (node.getChildren().isEmpty()) {
+                Class<? extends AbstractTreeNode> parentClass = node.getClass();
+                goThroughCollection(node, parentClass, restFilePaths);
             }
-            if (filePaths.size() >= initialQuantity) break;
 
         }
-        return Collections.EMPTY_SET;
+    }
+
+    private List<Path> plantTree() {
+        final List<Path> filePaths = collectPaths();
+        Class<? extends AbstractTreeNode> parentClass = rootNode.getClass();
+        return goThroughCollection((T) RootNode.getinstance(), parentClass, filePaths);
+    }
+
+    private List<Path> goThroughCollection(T node, Class<? extends AbstractTreeNode> parentClass, List<Path> filePaths) {
+        final ListIterator<Path> listIterator = filePaths.listIterator();
+        while (listIterator.hasNext()) {
+            Path onePath = listIterator.next();
+            Class<T> klass = loadNode(onePath);
+            if (Objects.isNull(klass)) {
+                listIterator.remove();
+                continue;
+            }
+            if (klass.isAnnotationPresent(ParentNode.class)
+                    && klass.getAnnotation(ParentNode.class).parentName().equals(parentClass)) {
+                try {
+                    node.getChildren().add(klass.newInstance());
+                    listIterator.remove();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+        return filePaths;
+    }
+
+    private Class<T> loadNode(Path onePath) {
+        Class<T> klass = null;
+        try {
+            String fileName = onePath.toString().substring(
+                            onePath.toString().lastIndexOf("ru"),
+                            onePath.toString().lastIndexOf("."))
+                    .replace(File.separator, ".");
+            klass = (Class<T>) Class.forName(fileName);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return klass;
     }
 
     private List<Path> collectPaths() {
@@ -79,8 +106,6 @@ public class TreeKeeper<T extends AbstractTreeNode> {
         }
         return filePaths;
     }
-
-    private final Set<? extends AbstractTreeNode> tree;
 
     public static TreeKeeper getInstance() {
         if (Objects.isNull(instance)) instance = new TreeKeeper();

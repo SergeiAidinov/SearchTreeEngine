@@ -1,4 +1,8 @@
 package ru.yandex.incoming34.treeNodes;
 
-public abstract class AbstractTreeNode {
+import java.util.Set;
+
+public abstract class AbstractTreeNode<T extends AbstractTreeNode> {
+
+    public abstract Set<T> getChildren();
 }
