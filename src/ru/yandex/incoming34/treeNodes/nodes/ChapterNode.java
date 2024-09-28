@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @ParentNode(parentName = SectionNode.class)
-public class ChapterNode<T extends AbstractTreeNode> extends AbstractTreeNode {
+public class ChapterNode<T extends AbstractTreeNode<T>> extends AbstractTreeNode<T> {
     private final Set<T> children = new HashSet<>();
     private T parent;
 

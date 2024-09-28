@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @ParentNode(parentName = RootNode.class)
-public class VolumeNode<T extends AbstractTreeNode> extends AbstractTreeNode {
+public class VolumeNode<T extends AbstractTreeNode<T>> extends AbstractTreeNode<T> {
 
     private final Set<T> children = new HashSet<>();
     private T parent;
