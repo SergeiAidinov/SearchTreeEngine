@@ -20,7 +20,7 @@ public class Forester<T extends AbstractTreeNode> {
 
     private static Forester instance;
     private final RootNode rootNode =  RootNode.getinstance();
-    List<Class<T>> validElements;
+    private List<Class<T>> validElements;
 
     private Forester() {
     }
@@ -31,25 +31,26 @@ public class Forester<T extends AbstractTreeNode> {
     }
 
     public Set<T> growTree() {
-        plantTree();
-        recursiveCircuit((T) rootNode);
+        //plantTree();
+        final List<Path> filePaths = collectPaths();
+        validElements = Collections.unmodifiableList(removeInvalidElements(filePaths));
+
+        recursiveCircuitWide((List<T>) List.of(RootNode.getinstance()));
         return rootNode.getChildren();
     }
 
-    public void recursiveCircuit(T node) {
-        Set<T> children = node.getChildren();
-        for (T childNode : children) {
-            if (childNode.getChildren().isEmpty()) {
-                goThroughCollection(childNode);
-                recursiveCircuit(childNode);
-            }
+    private void recursiveCircuitWide(List<T> parentNodeList) {
+        final List<T> nextParentNodes = new ArrayList<>();
+        for (T parentNode : parentNodeList) {
+            nextParentNodes.addAll(goThroughCollection(parentNode));
         }
+        if (!nextParentNodes.isEmpty()) recursiveCircuitWide(nextParentNodes);
     }
 
     private void plantTree() {
         final List<Path> filePaths = collectPaths();
         validElements = Collections.unmodifiableList(removeInvalidElements(filePaths));
-        goThroughCollection((T) RootNode.getinstance());
+        recursiveCircuitWide((List<T>) List.of(RootNode.getinstance()));
     }
 
     private List<Class<T>> removeInvalidElements(List<Path> filePaths) {
@@ -64,18 +65,21 @@ public class Forester<T extends AbstractTreeNode> {
         return classes;
     }
 
-    private void goThroughCollection(T node) {
+    private List<T> goThroughCollection(T node) {
+        final List<T> nextParentNodes = new ArrayList<>();
         for (Class<T> klass : validElements) {
             if (klass.getAnnotation(ParentNode.class).parentName().equals(node.getClass())) {
                 try {
                     T newInstance = klass.getDeclaredConstructor().newInstance();
                     newInstance.setParent(node);
                     node.getChildren().add(newInstance);
+                    nextParentNodes.add(newInstance);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
+        return nextParentNodes;
     }
 
     private Class<T> loadNode(Path onePath) {
