@@ -31,7 +31,6 @@ public class Forester<T extends AbstractTreeNode> {
     }
 
     public Set<T> growTree() {
-        //plantTree();
         final List<Path> filePaths = collectPaths();
         validElements = Collections.unmodifiableList(removeInvalidElements(filePaths));
 
@@ -45,12 +44,6 @@ public class Forester<T extends AbstractTreeNode> {
             nextParentNodes.addAll(goThroughCollection(parentNode));
         }
         if (!nextParentNodes.isEmpty()) recursiveCircuitWide(nextParentNodes);
-    }
-
-    private void plantTree() {
-        final List<Path> filePaths = collectPaths();
-        validElements = Collections.unmodifiableList(removeInvalidElements(filePaths));
-        recursiveCircuitWide((List<T>) List.of(RootNode.getinstance()));
     }
 
     private List<Class<T>> removeInvalidElements(List<Path> filePaths) {

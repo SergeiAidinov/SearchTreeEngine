@@ -6,8 +6,8 @@ import ru.yandex.incoming34.treeNodes.RootNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-public class SearchTreeConvertor<T extends AbstractTreeNode<T>> {
+//TODO
+public class SearchTreeConvertor<T extends AbstractTreeNode<T, P>, P> {
 
     private final List<T> leaves = new ArrayList<>();
 
